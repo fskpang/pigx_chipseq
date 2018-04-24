@@ -165,9 +165,6 @@ TRIM_GALORE_DICT = {}
 for name in NAMES:
     TRIM_GALORE_DICT[name] = get_trimmed_input(name) 
 
-# ---------------------------------------------------------------------------- #
-# RULE ALL
-# Default output files from the pipeline
 
 
 # ---------------------------------------------------------------------------- #
@@ -200,6 +197,14 @@ else:
         PARAMS['width_params'] = width_params
 
 
+# ---------------------------------------------------------------------------- #
+# check wether deduplication should be performed, if yes
+# change the suffix of the output bam file
+
+if PARAMS['bam_filter']['deduplicate']:
+    BAM_SUFFIX =  ".aligned.deduplicated.sorted.bam"
+else:
+    BAM_SUFFIX =  ".aligned.sorted.bam"
 
 
 # ---------------------------------------------------------------------------- #
@@ -218,8 +223,8 @@ targets = {
 
 GENOME_FASTA    = [GENOME_PREFIX_PATH + '.fa']
 INDEX           = [INDEX_PREFIX_PATH  + '.1.bt2']
-TRIMMING        = [flatten(TRIM_GALORE_DICT.values())] 
-BOWTIE2         = expand(os.path.join(PATH_MAPPED, "{name}", "{name}.sorted.bam.bai"), name=NAMES)
+TRIMMING        = [flatten(TRIM_GALORE_DICT.values())]
+BOWTIE2         = expand(os.path.join(PATH_MAPPED, "{name}", "{name}" + BAM_SUFFIX + ".bai"), name=NAMES)
 BOWTIE2_STATS   = [os.path.join(PATH_RDS, "BowtieLog.rds")]
 CHRLEN          = [GENOME_PREFIX_PATH + '.chrlen.txt']
 TILLING_WINDOWS = [GENOME_PREFIX_PATH + '.GenomicWindows.GRanges.rds']
@@ -376,15 +381,20 @@ include: os.path.join(RULES_PATH, 'Summarize_Data_For_Report.py')
 include: os.path.join(RULES_PATH, 'Knit_Report.py')
 
 targets['final-report'] = {
-'description': "Produce a comprehensive report.  This is the default target.",
+'description': "Produce a comprehensive report.",
 'files': SUMMARIZED_DATA_FOR_REPORT + REPORT
 }
 
 
+targets['complete'] = {
+'description': "Run full pipeline with all available targets. This is the default target.",
+'files': flatten([targets[key]['files'] for key in targets.keys()])
+}
+
 # ----------------------------------------------------------------------------- #
 # TARGETTED EXECUTION
 # Selected output files from the above set.
-selected_targets = config['execution']['target'] or ['final-report']
+selected_targets = config['execution']['target'] or ['complete']
 
 # FIXME: the list of files must be flattened twice(!).  We should make
 # sure that the targets really just return simple lists.
