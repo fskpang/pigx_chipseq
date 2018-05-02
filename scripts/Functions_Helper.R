@@ -256,10 +256,11 @@ Annotate_Reads = function(
 #' .listBamFiles
 #'
 #' @param path - top directory with mapped samples
+#' @param suffix - suffix to strip of from bam files
 #'
 #' @return a data.frame with location of bam files
 
-.list_BamFiles = function(path){
+.list_BamFiles = function(path,suffix='.sorted.bam'){
 
     suppressPackageStartupMessages(library(dplyr))
     suppressPackageStartupMessages(library(stringr))
@@ -270,7 +271,7 @@ Annotate_Reads = function(
                                          recursive=TRUE)) %>%
         mutate(bam_name = basename(bam_file))             %>%
         dplyr::filter(str_detect(bam_name,'sorted'))      %>%
-        mutate(bam_name = str_replace(bam_name,'.sorted.bam',''))
+        mutate(bam_name = str_replace(bam_name,suffix,''))
     return(d)
 }
 
